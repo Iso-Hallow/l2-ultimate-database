@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>L2 Ultimate Database & GM Navigator</title>
+    <meta name="description" content="Advanced Lineage 2 Database: GM Commands, Player Macros, Hotkeys, Coordinates, and Interactive Syntax Generator.">
+    <meta name="theme-color" content="#0f1015">
+    <meta name="repository" content="l2-ultimate-database">
+    <meta name="status" content="beta">
+    <style>
+        :root {
+            --bg-main: #0f1015;
+            --bg-panel: #161821;
+            --bg-card: #1f222e;
+            --bg-input: #0a0b0e;
+            --text-main: #d5d5e2;
+            --text-muted: #82849e;
+            --accent: #5e6ad2;
+            --accent-hover: #7b88ff;
+            --border: #2c2f40;
+            --color-admin: #ff4d4d;
+            --color-player: #00d2ff;
+            --color-voice: #b54dff;
+            --success: #00d66b;
+            --warning: #ffb84d;
+        }
+
+        body.light-theme {
+            --bg-main: #f4f5f7;
+            --bg-panel: #ffffff;
+            --bg-card: #ffffff;
+            --bg-input: #eaedf2;
+            --text-main: #2b2d38;
+            --text-muted: #6b6e82;
+            --accent: #4a55c2;
+            --accent-hover: #5e6ad2;
+            --border: #d7dae5;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); line-height: 1.4; transition: background 0.3s, color 0.3s; }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 16px; }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--bg-panel) 0%, rgba(94, 106, 210, 0.1) 100%);
+            padding: 24px; border-radius: 16px; margin-bottom: 20px; border: 1px solid var(--border);
+            text-align: center; display: flex; flex-direction: column; gap: 8px;
+        }
+        .header h1 { color: var(--accent); font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; }
+        .header p { color: var(--text-muted); font-size: 0.9rem; }
+
+        /* Layout */
+        .layout { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 1024px) { .layout { grid-template-columns: 280px 1fr 280px; } }
+        @media (max-width: 1023px) and (min-width: 768px) { .layout { grid-template-columns: 280px 1fr; } }
+        @media (max-width: 767px) { 
+            .layout { display: flex; flex-direction: column; } 
+            .right-sidebar { margin-top: 10px; }
+        }
+
+        /* Panels */
+        .sidebar { display: flex; flex-direction: column; gap: 16px; }
+        .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+        
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .panel-header h3 { font-size: 1rem; color: var(--text-main); }
+        
+        .nav-list { display: flex; flex-direction: column; gap: 4px; }
+        .nav-item { padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; color: var(--text-muted); transition: 0.2s; display: flex; align-items: center; justify-content: space-between; }
+        .nav-item:hover { background: var(--bg-card); color: var(--text-main); }
+        .nav-item.active { background: var(--accent); color: #fff; font-weight: bold; }
+        .nav-item .count-badge { background: var(--bg-input); padding: 2px 6px; border-radius: 10px; font-size: 0.75rem; border: 1px solid var(--border); }
+        .nav-item.active .count-badge { background: rgba(0,0,0,0.2); border-color: transparent; }
+
+        /* Action Buttons (Favs) */
+        .sidebar-actions { display: none; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 8px; gap: 8px; flex-direction: column; }
+        .btn-action { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; transition: 0.2s; display: flex; justify-content: center; gap: 8px; font-weight: 600;}
+        .btn-action:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-action.danger:hover { border-color: var(--color-admin); color: var(--color-admin); }
+
+        /* Data Tabs (Items, Classes, Locs, Skills) */
+        .sub-tabs { display: flex; flex-wrap: wrap; gap: 4px; background: var(--bg-input); padding: 4px; border-radius: 8px; margin-bottom: 12px; }
+        .sub-tab { flex: 1 1 45%; text-align: center; padding: 6px; font-size: 0.75rem; cursor: pointer; border-radius: 6px; color: var(--text-muted); transition: 0.2s; white-space: nowrap; }
+        .sub-tab:hover { color: var(--text-main); }
+        .sub-tab.active { background: var(--bg-card); color: var(--accent); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+        .quick-data-container { max-height: 500px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding-right: 4px; }
+        .quick-data-container::-webkit-scrollbar { width: 4px; }
+        .quick-data-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        .data-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: var(--bg-card); border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 0.8rem; transition: 0.2s; }
+        .data-item:hover { border-color: var(--accent); transform: translateX(2px); }
+        .data-item span.id-badge { background: var(--bg-input); padding: 2px 6px; border-radius: 4px; color: var(--accent); font-family: monospace; font-weight: bold; font-size: 0.75rem; }
+
+        /* Search */
+        .toolbar { display: flex; gap: 12px; margin-bottom: 16px; position: sticky; top: 10px; z-index: 100; }
+        .search-input { flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-panel); color: var(--text-main); font-size: 1rem; outline: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .search-input:focus { border-color: var(--accent); }
+
+        /* Commands Grid */
+        .cmd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; align-items: start; }
+        .cmd-grid:empty::before { content: "⏳ Loading / No items found..."; grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px; font-weight: 500; background: var(--bg-panel); border-radius: 12px; border: 1px dashed var(--border);}
+        
+        .cmd-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; transition: 0.2s; display: flex; flex-direction: column; gap: 8px; position: relative;}
+        .cmd-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        
+        .cmd-head { display: flex; justify-content: space-between; align-items: flex-start; }
+        .cmd-title { font-weight: bold; font-family: monospace; font-size: 1.05rem; display: flex; align-items: center; gap: 6px; color: var(--text-main); }
+        
+        .badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
+        .badge.admin { background: rgba(255, 77, 77, 0.1); color: var(--color-admin); }
+        .badge.player { background: rgba(0, 210, 255, 0.1); color: var(--color-player); }
+        .badge.voice { background: rgba(181, 77, 255, 0.1); color: var(--color-voice); }
+        .badge.info { background: rgba(255, 184, 77, 0.1); color: var(--warning); }
+        .badge.hotkey { background: rgba(153, 153, 153, 0.1); color: var(--text-muted); }
+
+        .cmd-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; white-space: pre-wrap; }
+        
+        .btn-fav { background: none; border: none; cursor: pointer; color: var(--border); font-size: 1.2rem; transition: 0.2s; }
+        .btn-fav:hover, .btn-fav.active { color: var(--warning); transform: scale(1.1); }
+
+        /* Unified Result Bar */
+        .result-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(0, 214, 107, 0.05); padding: 8px 10px; border-radius: 6px; border-left: 3px solid var(--success); margin-top: auto; }
+        .result-text { font-family: monospace; font-size: 0.85rem; color: var(--success); font-weight: bold; word-break: break-all; white-space: normal; }
+        
+        .btn-copy { background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; transition: 0.2s; padding: 0 4px;}
+        .btn-copy:hover { color: var(--success); transform: scale(1.1); }
+
+        /* Compact Generator Inputs */
+        .gen-area { background: var(--bg-input); border-radius: 6px; padding: 10px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+        .inputs-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+        .inp-box { flex: 1; min-width: 80px; display: flex; flex-direction: column; }
+        .inp-box label { font-size: 0.65rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;}
+        .inp-box input { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 6px 8px; border-radius: 4px; font-size: 0.85rem; font-family: monospace; outline: none; width: 100%; transition: 0.2s;}
+        .inp-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(94, 106, 210, 0.2); }
+        
+        /* Floating controls */
+        .float-controls { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 50; }
+        .btn-circle { width: 44px; height: 44px; border-radius: 50%; background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-main); font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-circle:hover { transform: scale(1.1); border-color: var(--accent); }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1 id="ui_title">📚 L2 Ultimate Database</h1>
+        <p id="ui_subtitle">Smart Cheat Sheet: GM Commands, Hotkeys, Coordinates & IDs</p>
+    </div>
+
+    <div class="layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar left-sidebar">
+            <div class="panel">
+                <div class="panel-header"><h3 id="ui_cats">📁 Categories</h3></div>
+                <div class="nav-list" id="catList"></div>
+                
+                <!-- Export/Import Actions (Visible only in Favorites) -->
+                <div class="sidebar-actions" id="favActions">
+                    <button class="btn-action" onclick="exportFavs()"><span id="btn_exp">📤 Export</span></button>
+                    <button class="btn-action" onclick="document.getElementById('importFile').click()"><span id="btn_imp">📥 Import</span></button>
+                    <button class="btn-action danger" onclick="clearFavs()"><span id="btn_clr">🗑 Clear All</span></button>
+                </div>
+                <input type="file" id="importFile" style="display:none" accept=".json" onchange="importFavs(event)">
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main>
+            <div class="toolbar">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search: //spawn, Alt+B, Giran...">
+            </div>
+            <div class="cmd-grid" id="cmdGrid"></div>
+        </main>
+
+        <!-- Right Sidebar (Quick Data) -->
+        <aside class="sidebar right-sidebar">
+            <div class="panel">
+                <div class="sub-tabs">
+                    <div class="sub-tab active" onclick="switchDataTab('items', this)" id="ui_tab_items">📦 Items</div>
+                    <div class="sub-tab" onclick="switchDataTab('skills', this)" id="ui_tab_skills">✨ Skills</div>
+                    <div class="sub-tab" onclick="switchDataTab('locs', this)" id="ui_tab_locs">🗺️ Locs</div>
+                    <div class="sub-tab" onclick="switchDataTab('classes', this)" id="ui_tab_classes">🛡️ Classes</div>
+                </div>
+                <div class="quick-data-container" id="quickDataList"></div>
+            </div>
+        </aside>
+    </div>
+
+    <div class="float-controls">
+        <button class="btn-circle" onclick="toggleLang()" title="Switch Language">🌐</button>
+        <button class="btn-circle" onclick="toggleTheme()" title="Toggle Theme">🌓</button>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // 1. DATA KNOWLEDGE BASE
+    // ==========================================
+    
+    // Main Database (Commands, Hotkeys, Info)
+    const db = [
+        // --- ADMIN: BASE ---
+        { id: "gm1", cat: "admin_base", type: "admin", cmd: "//gm", args: [], ru: "Вызов окна GM", en: "Open GM window" },
+        { id: "gm2", cat: "admin_base", type: "admin", cmd: "//hide", args: [{n:"state", v:"on/off"}], ru: "Включить/выключить невидимость", en: "Toggle invisibility" },
+        { id: "gm3", cat: "admin_base", type: "admin", cmd: "//invul", args: [], ru: "Бессмертие (God Mode)", en: "Invulnerability mode" },
+        { id: "gm4", cat: "admin_base", type: "admin", cmd: "//teleport", args: [{n:"x", v:"146129"}, {n:"y", v:"25762"}, {n:"z", v:"-2018"}], ru: "Телепорт по координатам (XYZ)", en: "Teleport to XYZ coordinates" },
+        { id: "gm5", cat: "admin_base", type: "admin", cmd: "//teleportto", args: [{n:"char_name", v:"Player1"}], ru: "Телепорт к игроку", en: "Teleport to player" },
+        { id: "gm6", cat: "admin_base", type: "admin", cmd: "//earthquake", args: [{n:"intensity", v:"5"}, {n:"duration", v:"10"}], ru: "Имитация землетрясения", en: "Simulate earthquake" },
+        { id: "gm7", cat: "admin_base", type: "admin", cmd: "//gmspeed", args: [{n:"value", v:"5"}], ru: "Скорость бега (1-5)", en: "Run speed multiplier" },
+        { id: "gm8", cat: "admin_base", type: "admin", cmd: "//polymorph", args: [{n:"npc_id", v:"29001"}], ru: "Превратиться в NPC", en: "Morph into NPC" },
+        
+        // --- ADMIN: SPAWN & ITEMS ---
+        { id: "sp1", cat: "admin_spawn", type: "admin", cmd: "//spawn", args: [{n:"npc_id", v:"31228"}, {n:"count", v:"1"}], ru: "Заспавнить NPC/Моба", en: "Spawn NPC/Mob" },
+        { id: "sp2", cat: "admin_spawn", type: "admin", cmd: "//summon", args: [{n:"item_id", v:"57"}, {n:"count", v:"1000"}], ru: "Создать предмет в инвентарь", en: "Create item in inventory" },
+        { id: "sp3", cat: "admin_spawn", type: "admin", cmd: "//summon2", args: [{n:"enchant", v:"15"}, {n:"item_id", v:"65535"}], ru: "Создать заточенный предмет", en: "Create enchanted item" },
+        { id: "sp4", cat: "admin_spawn", type: "admin", cmd: "//killnpc", args: [], ru: "Убить выделенного NPC", en: "Kill targeted NPC" },
+        { id: "sp5", cat: "admin_spawn", type: "admin", cmd: "//clean", args: [], ru: "Очистить локацию от дропа", en: "Clean dropped items from ground" },
+        
+        // --- ADMIN: PLAYER MANAGEMENT ---
+        { id: "pl1", cat: "admin_player", type: "admin", cmd: "//setparam", args: [{n:"param", v:"level"}, {n:"val", v:"80"}], ru: "Изменить параметр (level, exp, sp, pk_counter)", en: "Set stat (level, exp, sp, pk_counter)" },
+        { id: "pl2", cat: "admin_player", type: "admin", cmd: "//setclass", args: [{n:"class_id", v:"118"}], ru: "Установить профессию", en: "Set class by ID" },
+        { id: "pl3", cat: "admin_player", type: "admin", cmd: "//setskill", args: [{n:"skill_id", v:"1086"}, {n:"lvl", v:"2"}], ru: "Выдать скилл таргету", en: "Give skill to target" },
+        { id: "pl4", cat: "admin_player", type: "admin", cmd: "//set_hero", args: [], ru: "Выдать статус Героя", en: "Set Hero status" },
+        { id: "pl5", cat: "admin_player", type: "admin", cmd: "//set_nobless", args: [], ru: "Выдать статус Дворянина (Noblesse)", en: "Set Noblesse status" },
+        { id: "pl6", cat: "admin_player", type: "admin", cmd: "//recall", args: [{n:"name", v:"PlayerName"}], ru: "Призвать игрока к себе", en: "Summon player to you" },
+        { id: "pl7", cat: "admin_player", type: "admin", cmd: "//kick", args: [{n:"name", v:"Spammer"}], ru: "Кикнуть игрока", en: "Kick player" },
+        { id: "pl8", cat: "admin_player", type: "admin", cmd: "//ban", args: [{n:"name", v:"Bot"}], ru: "Забанить игрока", en: "Ban player account" },
+        
+        // --- ADMIN: CLAN & SERVER ---
+        { id: "cl1", cat: "admin_clan", type: "admin", cmd: "//declare_clan_war", args: [{n:"clan1", v:"A"}, {n:"clan2", v:"B"}], ru: "Начать войну кланов", en: "Start clan war" },
+        { id: "cl2", cat: "admin_clan", type: "admin", cmd: "//set_castle_owner", args: [{n:"castle_id", v:"5"}, {n:"clan_id", v:"123"}], ru: "Назначить владельца замка", en: "Set castle owner" },
+        { id: "cl3", cat: "admin_clan", type: "admin", cmd: "//announce", args: [{n:"text", v:"Server restart in 5 min!"}], ru: "Отправить глобальное объявление", en: "Global Announcement" },
+        { id: "cl4", cat: "admin_clan", type: "admin", cmd: "//status", args: [], ru: "Показать онлайн и загрузку CPU", en: "Show online count and CPU usage" },
+        { id: "cl5", cat: "admin_clan", type: "admin", cmd: "//memory", args: [], ru: "Показать использование RAM", en: "Show RAM memory usage" },
+        { id: "cl6", cat: "admin_clan", type: "admin", cmd: "//uptime", args: [], ru: "Показать время работы без рестарта", en: "Show server uptime" },
+        
+        // --- VOICE COMMANDS (.cfg) ---
+        { id: "vc1", cat: "voice", type: "voice", cmd: ".cfg", args: [], ru: "Панель настроек сервера (GUI)", en: "Server settings panel (GUI)" },
+        { id: "vc2", cat: "voice", type: "voice", cmd: ".repair", args: [], ru: "Восстановление сломанного персонажа (использовать с твинка)", en: "Repair broken character on account" },
+        { id: "vc3", cat: "voice", type: "voice", cmd: ".lock", args: [], ru: "Привязка аккаунта к IP адресу/подсети", en: "Lock account to current IP" },
+        { id: "vc4", cat: "voice", type: "voice", cmd: ".hwid", args: [], ru: "Привязка аккаунта к ПК (HWID)", en: "Lock account to current PC hardware" },
+        { id: "vc5", cat: "voice", type: "voice", cmd: ".whoami", args: [], ru: "Показать расширенные статы персонажа", en: "Show advanced character stats" },
+        { id: "vc6", cat: "voice", type: "voice", cmd: ".clanlist", args: [], ru: "Удобный список членов клана", en: "Advanced Clan List UI" },
+
+        // --- PLAYER: CHAT & SOCIAL ---
+        { id: "pc1", cat: "player_social", type: "player", cmd: "!", args: [{n:"msg", v:"WTS Vesper"}], ru: "Крик (Шаут, оранжевый чат)", en: "Shout chat (Orange)" },
+        { id: "pc2", cat: "player_social", type: "player", cmd: "+", args: [{n:"msg", v:"WTS"}], ru: "Торговый чат (Розовый)", en: "Trade chat (Pink)" },
+        { id: "pc3", cat: "player_social", type: "player", cmd: "#", args: [{n:"msg", v:"Heal!"}], ru: "Чат группы (Зеленый)", en: "Party chat (Green)" },
+        { id: "pc4", cat: "player_social", type: "player", cmd: "@", args: [{n:"msg", v:"Hello clan"}], ru: "Чат клана (Синий)", en: "Clan chat (Blue)" },
+        { id: "pc5", cat: "player_social", type: "player", cmd: "$", args: [{n:"msg", v:"Ally gather"}], ru: "Чат альянса (Светло-зеленый)", en: "Alliance chat (Light green)" },
+        { id: "pc6", cat: "player_social", type: "player", cmd: "%", args: [{n:"msg", v:"Hero speak"}], ru: "Чат героя (Голубой)", en: "Hero voice (Light blue)" },
+        { id: "pc7", cat: "player_social", type: "player", cmd: "\"", args: [{n:"name msg", v:"Admin help!"}], ru: "Приватное сообщение (Шепот)", en: "Whisper (Private message)" },
+        { id: "pc8", cat: "player_social", type: "player", cmd: "/block", args: [{n:"name", v:"Spammer"}], ru: "Добавить в игнор лист (общение и трейд)", en: "Block player (chat & trade)" },
+        
+        // --- PLAYER: ACTIONS & MACROS ---
+        { id: "pa1", cat: "player_actions", type: "player", cmd: "/target", args: [{n:"name", v:"Valakas"}], ru: "Взять в таргет", en: "Target entity" },
+        { id: "pa2", cat: "player_actions", type: "player", cmd: "/assist", args: [{n:"name", v:"Tank"}], ru: "Ассист (Взять цель цели)", en: "Assist target" },
+        { id: "pa3", cat: "player_actions", type: "player", cmd: "/attackforce", args: [], ru: "Принудительная атака (как Ctrl+Click)", en: "Force attack" },
+        { id: "pa4", cat: "player_actions", type: "player", cmd: "/invite", args: [{n:"name", v:"Healer"}], ru: "Пригласить в группу", en: "Invite to party" },
+        { id: "pa5", cat: "player_actions", type: "player", cmd: "/trade", args: [{n:"name", v:"Dwarf"}], ru: "Предложить обмен", en: "Propose trade" },
+        { id: "pa6", cat: "player_actions", type: "player", cmd: "/loc", args: [], ru: "Отобразить текущие координаты (X Y Z)", en: "Show current XYZ coordinates" },
+        { id: "pa7", cat: "player_actions", type: "player", cmd: "/unstuck", args: [], ru: "Телепорт в город (5 мин, если застрял)", en: "Escape to town (5 mins)" },
+        
+        // --- HOTKEYS ---
+        { id: "hk1", cat: "hotkeys", type: "hotkey", cmd: "Esc", args: [], ru: "Отменяет текущую цель", en: "Cancels current target" },
+        { id: "hk2", cat: "hotkeys", type: "hotkey", cmd: "F1~F12", args: [], ru: "Выполнить действие из панели ярлыков", en: "Execute action from shortcut bar" },
+        { id: "hk3", cat: "hotkeys", type: "hotkey", cmd: "Alt+F1~F10", args: [], ru: "Переключение вкладок панели ярлыков", en: "Switch shortcut bar pages" },
+        { id: "hk4", cat: "hotkeys", type: "hotkey", cmd: "Page Up/Down", args: [], ru: "Сменить обзор камеры (приближение/отдаление)", en: "Change camera view (zoom in/out)" },
+        { id: "hk5", cat: "hotkeys", type: "hotkey", cmd: "Tab / Alt+V", args: [], ru: "Открыть окно инвентаря", en: "Open inventory window" },
+        { id: "hk6", cat: "hotkeys", type: "hotkey", cmd: "Alt+T", args: [], ru: "Просмотр окна статуса персонажа", en: "View character status" },
+        { id: "hk7", cat: "hotkeys", type: "hotkey", cmd: "Alt+K", args: [], ru: "Просмотр окна умений (Skills)", en: "View skills window" },
+        { id: "hk8", cat: "hotkeys", type: "hotkey", cmd: "Alt+C", args: [], ru: "Просмотр окна команд (Действия)", en: "View actions window" },
+        { id: "hk9", cat: "hotkeys", type: "hotkey", cmd: "Alt+N", args: [], ru: "Открыть окно клана", en: "Open clan window" },
+        { id: "hk10", cat: "hotkeys", type: "hotkey", cmd: "Alt+U", args: [], ru: "Открыть окно квестов", en: "Open quests window" },
+        { id: "hk11", cat: "hotkeys", type: "hotkey", cmd: "Alt+M", args: [], ru: "Открыть карту мира", en: "Open world map" },
+        { id: "hk12", cat: "hotkeys", type: "hotkey", cmd: "Alt+B", args: [], ru: "Community Board (КБ, баффер, телепорт)", en: "Open Community Board" },
+        { id: "hk13", cat: "hotkeys", type: "hotkey", cmd: "Alt+X", args: [], ru: "Открыть системное меню", en: "Open system menu" },
+        { id: "hk14", cat: "hotkeys", type: "hotkey", cmd: "Alt+G", args: [], ru: "Открыть панель GM (для администраторов)", en: "Open GM Control Panel" },
+        { id: "hk15", cat: "hotkeys", type: "hotkey", cmd: "Alt+Enter", args: [], ru: "Переключение: Полноэкранный / Оконный режим", en: "Toggle Fullscreen / Windowed mode" },
+
+        // --- CHEAT SHEETS (Info) ---
+        { id: "inf1", cat: "info", type: "info", cmd: "GM Уровни (Access Levels)", args: [], ru: "Уровень 1: Trial GM (Скрытность, Телепорт, Анонсы)\nУровень 2: Event GM (Спавн NPC, Выдача предметов)\nУровень 5: Admin (Смена проф, Баны, Контроль осад)", en: "Level 1: Trial (Hide, Teleport, Announce)\nLevel 2: Event (Spawn, Items)\nLevel 5: Full Admin (Bans, Classes, Sieges)" },
+        { id: "inf2", cat: "info", type: "info", cmd: "Формулы и Советы", args: [], ru: "• Безопасная заточка (Safe): Оружие +3 (Цельное +4), Броня +3\n• Радиус спавна (//spawnmob): 1000 = стандарт, 5000 = зона\n• Очистка диска от логов: папка /log на сервере", en: "• Safe Enchant: Wep +3 (Full-body +4), Armor +3\n• Spawn radius: 1000=normal, 5000=large zone\n• Clean logs: /log folder on server" }
+    ];
+
+    // Quick Data Arrays
+    const dbLocs = [
+        {id: "120000 112000 -3400", ru: "Гиран", en: "Giran"}, {id: "147200 26700 -2200", ru: "Аден", en: "Aden"},
+        {id: "83000 148000 -3400", ru: "Особняк GM", en: "GM Mansion"}, {id: "116500 76000 -2700", ru: "Хунтерс", en: "Hunters Village"},
+        {id: "-84318 244579 -3730", ru: "Говорящий Остров", en: "Talking Island"}, {id: "43799 -47727 -798", ru: "Руна", en: "Rune Township"},
+        {id: "87386 -143246 -1293", ru: "Шутгарт", en: "Schuttgart"}, {id: "-12672 122776 -3116", ru: "Глудио", en: "Gludio"}
+    ];
+
+    const dbSkills = [
+        {id: "1086", ru: "Haste (Скор. Атаки)", en: "Haste"}, {id: "1068", ru: "Might (Физ. Атака)", en: "Might"},
+        {id: "1040", ru: "Shield (Физ. Защита)", en: "Shield"}, {id: "1085", ru: "Acumen (Скор. Магии)", en: "Acumen"},
+        {id: "1059", ru: "Empower (Маг. Атака)", en: "Empower"}, {id: "1204", ru: "Wind Walk (Скор. Бега)", en: "Wind Walk"},
+        {id: "1062", ru: "Beserker Spirit (Берс)", en: "Berserker Spirit"}, {id: "1388", ru: "Greater Might", en: "Greater Might"}
+    ];
+
+    const dbItems = [
+        {id: "57", ru: "Адена", en: "Adena"}, {id: "4037", ru: "Монета Магии", en: "Coin of Magic"},
+        {id: "13797", ru: "Монета Фестиваля", en: "Festival Coin"}, {id: "728", ru: "Зелье Маны (MP)", en: "Mana Potion"},
+        {id: "1539", ru: "Зелье Здоровья (HP)", en: "Gr. Healing Potion"}, {id: "736", ru: "Свиток Телепорта", en: "Scroll of Escape"},
+        {id: "959", ru: "Свиток: Оружие S", en: "Scroll: EWS"}, {id: "6656", ru: "Серьга Антараса", en: "Antharas Earring"},
+        {id: "6657", ru: "Ожерелье Валакаса", en: "Valakas Necklace"}, {id: "6658", ru: "Кольцо Баюма", en: "Baium Ring"},
+        {id: "6801", ru: "Меч ГМа", en: "GM Sword"}, {id: "6840", ru: "Кольцо ГМа", en: "GM Ring"}
+    ];
+
+    const dbClasses = [
+        {id:"0", ru:"Fighter", en:"Fighter"}, {id:"10", ru:"Mage", en:"Mage"}, {id:"88", ru:"Duelist", en:"Duelist"},
+        {id:"89", ru:"Dreadnought", en:"Dreadnought"}, {id:"90", ru:"Phoenix Knight", en:"Phoenix Knight"}, 
+        {id:"91", ru:"Hell Knight", en:"Hell Knight"}, {id:"92", ru:"Sagittarius", en:"Sagittarius"},
+        {id:"93", ru:"Adventurer", en:"Adventurer"}, {id:"94", ru:"Archmage", en:"Archmage"}, 
+        {id:"95", ru:"Soultaker", en:"Soultaker"}, {id:"96", ru:"Arcana Lord", en:"Arcana Lord"}, 
+        {id:"97", ru:"Cardinal", en:"Cardinal"}, {id:"98", ru:"Hierophant", en:"Hierophant"},
+        {id:"99", ru:"Eva's Templar", en:"Eva's Templar"}, {id:"100", ru:"Sword Muse", en:"Sword Muse"}, 
+        {id:"101", ru:"Wind Rider", en:"Wind Rider"}, {id:"102", ru:"Moonlight Sentinel", en:"Moonlight Sentinel"}, 
+        {id:"103", ru:"Mystic Muse", en:"Mystic Muse"}, {id:"104", ru:"Elemental Master", en:"Elemental Master"},
+        {id:"105", ru:"Eva's Saint", en:"Eva's Saint"}, {id:"106", ru:"Shillien Templar", en:"Shillien Templar"}, 
+        {id:"107", ru:"Spectral Dancer", en:"Spectral Dancer"}, {id:"108", ru:"Ghost Hunter", en:"Ghost Hunter"}, 
+        {id:"109", ru:"Ghost Sentinel", en:"Ghost Sentinel"}, {id:"110", ru:"Storm Screamer", en:"Storm Screamer"},
+        {id:"111", ru:"Spectral Master", en:"Spectral Master"}, {id:"112", ru:"Shillien Saint", en:"Shillien Saint"}, 
+        {id:"113", ru:"Titan", en:"Titan"}, {id:"114", ru:"Grand Khavatari", en:"Grand Khavatari"}, 
+        {id:"115", ru:"Dominator", en:"Dominator"}, {id:"116", ru:"Doomcryer", en:"Doomcryer"},
+        {id:"117", ru:"Fortune Seeker", en:"Fortune Seeker"}, {id:"118", ru:"Maestro", en:"Maestro"}
+    ];
+
+    // ==========================================
+    // 2. STATE & I18N
+    // ==========================================
+    let lang = localStorage.getItem('l2_lang') || 'ru'; 
+    let theme = localStorage.getItem('l2_theme') || 'dark';
+    let activeCategory = localStorage.getItem('l2_active_cat') || 'fav';
+    let activeDataTab = 'items';
+    let searchQuery = '';
+    let debounceTimer;
+    let favorites = JSON.parse(localStorage.getItem('l2_favs') || '[]');
+
+    const i18n = {
+        en: {
+            title: "📚 L2 Ultimate Database", subtitle: "Smart Cheat Sheet: GM Commands, Hotkeys, Coordinates & IDs",
+            cats: "📁 Categories", search: "Search: //spawn, Alt+B, Giran...",
+            cat_fav: "⭐ Favorites", cat_all: "📌 All Commands", cat_admin_base: "🔴 Admin: Base", cat_admin_spawn: "🔴 Admin: Spawn/Items",
+            cat_admin_player: "🔴 Admin: Players", cat_admin_clan: "🔴 Admin: Clan/Server", cat_voice: "🟣 Voice Configs (.cfg)",
+            cat_player_social: "🟢 Player: Social", cat_player_actions: "🟢 Player: Actions", cat_hotkeys: "⌨️ Hotkeys", cat_info: "📚 Cheat Sheets",
+            btn_exp: "📤 Export", btn_imp: "📥 Import", btn_clr: "🗑 Clear All",
+            conf_clr: "Are you sure you want to clear all favorites?",
+            no_favs: "No favorites to export", imp_ok: "Favorites imported successfully!", imp_err: "Invalid file format."
+        },
+        ru: {
+            title: "📚 L2 Ultimate Database", subtitle: "Умная база знаний: ГМ Команды, Горячие клавиши, Координаты и ID",
+            cats: "📁 Категории", search: "Поиск: //spawn, Alt+B, Гиран...",
+            cat_fav: "⭐ Избранное", cat_all: "📌 Все команды", cat_admin_base: "🔴 Админ: Базовые", cat_admin_spawn: "🔴 Админ: Спавн/Вещи",
+            cat_admin_player: "🔴 Админ: Игроки", cat_admin_clan: "🔴 Админ: Кланы/Сервер", cat_voice: "🟣 Голосовые (.cfg)",
+            cat_player_social: "🟢 Игрок: Чат и Социум", cat_player_actions: "🟢 Игрок: Макросы", cat_hotkeys: "⌨️ Горячие клавиши", cat_info: "📚 Справка (Шпоры)",
+            btn_exp: "📤 Экспорт", btn_imp: "📥 Импорт", btn_clr: "🗑 Очистить",
+            conf_clr: "Вы уверены, что хотите удалить все закладки?",
+            no_favs: "Нет закладок для экспорта", imp_ok: "Избранное успешно загружено!", imp_err: "Неверный формат файла."
+        }
+    };
+
+    function applyLocales() {
+        const t = i18n[lang];
+        document.getElementById('ui_title').innerText = t.title;
+        document.getElementById('ui_subtitle').innerText = t.subtitle;
+        document.getElementById('ui_cats').innerText = t.cats;
+        document.getElementById('searchInput').placeholder = t.search;
+        document.getElementById('btn_exp').innerText = t.btn_exp;
+        document.getElementById('btn_imp').innerText = t.btn_imp;
+        document.getElementById('btn_clr').innerText = t.btn_clr;
+        
+        renderCategories();
+        renderDataTab();
+        renderCommands();
+    }
+
+    function toggleTheme() {
+        theme = theme === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('l2_theme', theme);
+        document.body.className = theme === 'light' ? 'light-theme' : '';
+    }
+
+    function toggleLang() {
+        lang = lang === 'en' ? 'ru' : 'en';
+        localStorage.setItem('l2_lang', lang);
+        applyLocales();
+    }
+
+    // Secure copy fallback
+    function copyToClipboard(text, btn) {
+        const onSuccess = () => {
+            const oldIcon = btn.innerText;
+            btn.innerText = "✔";
+            btn.style.color = "var(--success)";
+            setTimeout(() => { btn.innerText = oldIcon; btn.style.color = ""; }, 1000);
+        };
+        
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(onSuccess).catch(err => console.error(err));
+        } else {
+            let textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed"; textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.select();
+            try { document.execCommand('copy'); onSuccess(); } catch (err) { console.error(err); }
+            textArea.remove();
+        }
+    }
+
+    // Favorites Logic
+    function toggleFav(id) {
+        if (favorites.includes(id)) { favorites = favorites.filter(fav => fav !== id); } 
+        else { favorites.push(id); }
+        localStorage.setItem('l2_favs', JSON.stringify(favorites));
+        renderCategories(); 
+        renderCommands();
+    }
+
+    function exportFavs() {
+        if(favorites.length === 0) return alert(i18n[lang].no_favs);
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(favorites));
+        const a = document.createElement('a');
+        a.setAttribute("href", dataStr);
+        a.setAttribute("download", "l2_gm_favorites.json");
+        document.body.appendChild(a); a.click(); a.remove();
+    }
+
+    function importFavs(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const arr = JSON.parse(event.target.result);
+                if(Array.isArray(arr)) {
+                    favorites = arr;
+                    localStorage.setItem('l2_favs', JSON.stringify(favorites));
+                    renderCategories(); renderCommands();
+                    alert(i18n[lang].imp_ok);
+                } else throw new Error();
+            } catch(err) { alert(i18n[lang].imp_err); }
+        };
+        reader.readAsText(file);
+        e.target.value = ''; // reset
+    }
+
+    function clearFavs() {
+        if(favorites.length > 0 && confirm(i18n[lang].conf_clr)) {
+            favorites = [];
+            localStorage.setItem('l2_favs', JSON.stringify(favorites));
+            renderCategories(); renderCommands();
+        }
+    }
+
+    // ==========================================
+    // 3. RENDERING & LOGIC
+    // ==========================================
+    
+    function buildCommandStr(base, card) {
+        let str = base;
+        card.querySelectorAll('input').forEach(inp => {
+            const val = inp.value.replace(/[<>]/g, ''); // basic sanitize
+            str += ` ${val}`;
+        });
+        return str;
+    }
+
+    function switchDataTab(tabName, el) {
+        activeDataTab = tabName;
+        document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        renderDataTab();
+    }
+
+    function renderDataTab() {
+        const container = document.getElementById('quickDataList');
+        const map = { 'items': dbItems, 'classes': dbClasses, 'locs': dbLocs, 'skills': dbSkills };
+        const data = map[activeDataTab];
+        
+        let html = '';
+        data.forEach(item => {
+            html += `
+                <div class="data-item" onclick="copyToClipboard('${item.id}', this.querySelector('.id-badge'))" title="Click to copy">
+                    <span>${item[lang]}</span>
+                    <span class="id-badge">${item.id}</span>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function getCategoryCount(cat) {
+        if (cat === 'fav') return favorites.length;
+        return db.filter(cmd => {
+            if (cat !== 'all' && cmd.cat !== cat) return false;
+            if (searchQuery) {
+                const text = `${cmd.cmd} ${cmd[lang]}`.toLowerCase();
+                if (!text.includes(searchQuery.toLowerCase())) return false;
+            }
+            return true;
+        }).length;
+    }
+
+    function renderCategories() {
+        const cats = ["fav", "all", "admin_base", "admin_spawn", "admin_player", "admin_clan", "voice", "player_social", "player_actions", "hotkeys", "info"];
+        const t = i18n[lang];
+        let html = '';
+        cats.forEach(c => {
+            const count = getCategoryCount(c);
+            const active = c === activeCategory ? 'active' : '';
+            if (searchQuery && count === 0) return; 
+            
+            html += `
+                <div class="nav-item ${active}" onclick="setActiveCat('${c}')">
+                    <span>${t[`cat_${c}`]}</span>
+                    <span class="count-badge">${count}</span>
+                </div>
+            `;
+        });
+        
+        document.getElementById('catList').innerHTML = html || `<div style="padding:10px; color:var(--text-muted); font-size:0.8rem;">Nothing found</div>`;
+        document.getElementById('favActions').style.display = activeCategory === 'fav' ? 'flex' : 'none';
+    }
+
+    window.setActiveCat = function(c) {
+        activeCategory = c;
+        localStorage.setItem('l2_active_cat', c);
+        renderCategories();
+        renderCommands();
+    }
+
+    function renderCommands() {
+        const grid = document.getElementById('cmdGrid');
+        
+        let filtered = db.filter(cmd => {
+            if (activeCategory === 'fav' && !favorites.includes(cmd.id)) return false;
+            if (activeCategory !== 'all' && activeCategory !== 'fav' && cmd.cat !== activeCategory) return false;
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                const text = `${cmd.cmd} ${cmd[lang]}`.toLowerCase();
+                if (!text.includes(q)) return false;
+            }
+            return true;
+        });
+
+        if(filtered.length === 0) {
+            grid.innerHTML = ''; // Let the :empty pseudo-class handle the placeholder
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(cmd => {
+            const isFav = favorites.includes(cmd.id);
+            const favClass = isFav ? 'active' : '';
+            const favIcon = isFav ? '⭐' : '☆';
+            
+            if (cmd.type === 'info') {
+                html += `
+                    <div class="cmd-card">
+                        <div class="cmd-head">
+                            <div class="cmd-title">${cmd.cmd} <span class="badge info">INFO</span></div>
+                            <button class="btn-fav ${favClass}" onclick="toggleFav('${cmd.id}')">${favIcon}</button>
+                        </div>
+                        <div class="cmd-desc" style="margin-top: 8px;">${cmd[lang]}</div>
+                    </div>
+                `;
+                return;
+            }
+
+            let genHtml = '';
+            let defaultCmd = cmd.cmd;
+
+            if (cmd.args && cmd.args.length > 0) {
+                let inputs = '';
+                cmd.args.forEach(arg => {
+                    inputs += `<div class="inp-box"><label>${arg.n}</label><input type="text" data-arg="${arg.n}" value="${arg.v}"></div>`;
+                    defaultCmd += ` ${arg.v}`;
+                });
+                
+                genHtml = `
+                    <div class="gen-area">
+                        <div class="inputs-wrap">${inputs}</div>
+                        <div class="result-bar">
+                            <span class="result-text">${defaultCmd}</span>
+                            <button class="btn-copy" onclick="copyToClipboard(this.previousElementSibling.innerText, this)" title="Copy">📋</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                genHtml = `
+                    <div class="result-bar" style="margin-top: 12px; background: rgba(0, 0, 0, 0.2);">
+                        <span class="result-text">${defaultCmd}</span>
+                        <button class="btn-copy" onclick="copyToClipboard('${defaultCmd}', this)" title="Copy">📋</button>
+                    </div>
+                `;
+            }
+
+            html += `
+                <div class="cmd-card" id="card_${cmd.id}">
+                    <div class="cmd-head">
+                        <div class="cmd-title">
+                            ${cmd.cmd} <span class="badge ${cmd.type}">${cmd.type}</span>
+                        </div>
+                        <button class="btn-fav ${favClass}" onclick="toggleFav('${cmd.id}')">${favIcon}</button>
+                    </div>
+                    <div class="cmd-desc">${cmd[lang]}</div>
+                    ${genHtml}
+                </div>
+            `;
+        });
+
+        grid.innerHTML = html;
+    }
+
+    // ==========================================
+    // 4. INIT & EVENTS
+    // ==========================================
+    function init() {
+        if (theme === 'light') document.body.className = 'light-theme';
+        applyLocales();
+        
+        // Debounced Search
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                searchQuery = e.target.value;
+                if(searchQuery && activeCategory !== 'all' && activeCategory !== 'fav') {
+                    activeCategory = 'all'; // Auto-switch to "All" when searching from a specific tab
+                }
+                renderCategories();
+                renderCommands();
+            }, 300);
+        });
+
+        // Event Delegation for Generator Inputs
+        document.getElementById('cmdGrid').addEventListener('input', (e) => {
+            if (e.target.tagName === 'INPUT') {
+                const card = e.target.closest('.cmd-card');
+                const cmdId = card.id.replace('card_', '');
+                const cmdObj = db.find(c => c.id === cmdId);
+                
+                if (cmdObj) {
+                    const resTxt = card.querySelector('.result-text');
+                    resTxt.innerText = buildCommandStr(cmdObj.cmd, card);
+                }
+            }
+        });
+    }
+
+    init();
+
+</script>
+</body>
+</html>
