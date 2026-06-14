@@ -88,7 +88,7 @@ git clone https://github.com/ваш-username/l2-ultimate-database.git
 # Перейдите в папку проекта
 cd l2-ultimate-database
 
-# Откройте index.html в браузере (достаточно双击)
+# Откройте index.html в браузере
 # Или используйте live-server:
 npx live-server
 ```
