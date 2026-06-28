@@ -6,8 +6,6 @@
     <title>L2 Ultimate Database & GM Navigator</title>
     <meta name="description" content="Advanced Lineage 2 Database: GM Commands, Player Macros, Hotkeys, Coordinates, and Interactive Syntax Generator.">
     <meta name="theme-color" content="#0f1015">
-    <meta name="repository" content="l2-ultimate-database">
-    <meta name="status" content="beta">
     <style>
         :root {
             --bg-main: #0f1015;
@@ -75,17 +73,18 @@
         .nav-item .count-badge { background: var(--bg-input); padding: 2px 6px; border-radius: 10px; font-size: 0.75rem; border: 1px solid var(--border); }
         .nav-item.active .count-badge { background: rgba(0,0,0,0.2); border-color: transparent; }
 
-        /* Action Buttons (Favs) */
         .sidebar-actions { display: none; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 8px; gap: 8px; flex-direction: column; }
         .btn-action { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; transition: 0.2s; display: flex; justify-content: center; gap: 8px; font-weight: 600;}
         .btn-action:hover { border-color: var(--accent); color: var(--accent); }
         .btn-action.danger:hover { border-color: var(--color-admin); color: var(--color-admin); }
 
-        /* Data Tabs (Items, Classes, Locs, Skills) */
-        .sub-tabs { display: flex; flex-wrap: wrap; gap: 4px; background: var(--bg-input); padding: 4px; border-radius: 8px; margin-bottom: 12px; }
+        /* Data Tabs */
+        .sub-tabs { display: flex; flex-wrap: wrap; gap: 4px; background: var(--bg-input); padding: 4px; border-radius: 8px; margin-bottom: 8px; }
         .sub-tab { flex: 1 1 45%; text-align: center; padding: 6px; font-size: 0.75rem; cursor: pointer; border-radius: 6px; color: var(--text-muted); transition: 0.2s; white-space: nowrap; }
         .sub-tab:hover { color: var(--text-main); }
         .sub-tab.active { background: var(--bg-card); color: var(--accent); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+        .data-count-info { font-size: 0.7rem; color: var(--text-muted); text-align: right; margin-bottom: 8px; font-weight: bold; }
 
         .quick-data-container { max-height: 500px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding-right: 4px; }
         .quick-data-container::-webkit-scrollbar { width: 4px; }
@@ -114,19 +113,32 @@
         .badge.admin { background: rgba(255, 77, 77, 0.1); color: var(--color-admin); }
         .badge.player { background: rgba(0, 210, 255, 0.1); color: var(--color-player); }
         .badge.voice { background: rgba(181, 77, 255, 0.1); color: var(--color-voice); }
+        .badge.sql { background: rgba(94, 106, 210, 0.1); color: var(--accent); }
         .badge.info { background: rgba(255, 184, 77, 0.1); color: var(--warning); }
         .badge.hotkey { background: rgba(153, 153, 153, 0.1); color: var(--text-muted); }
 
         .cmd-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; white-space: pre-wrap; }
-        
         .btn-fav { background: none; border: none; cursor: pointer; color: var(--border); font-size: 1.2rem; transition: 0.2s; }
         .btn-fav:hover, .btn-fav.active { color: var(--warning); transform: scale(1.1); }
 
-        /* Unified Result Bar */
-        .result-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(0, 214, 107, 0.05); padding: 8px 10px; border-radius: 6px; border-left: 3px solid var(--success); margin-top: auto; }
-        .result-text { font-family: monospace; font-size: 0.85rem; color: var(--success); font-weight: bold; word-break: break-all; white-space: normal; }
+        /* Unified Result Bar (WITH SCROLL FOR LONG SQL) */
+        .result-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(0, 214, 107, 0.05); padding: 8px 10px; border-radius: 6px; border-left: 3px solid var(--success); margin-top: auto; gap: 8px; }
+        .result-text { 
+            font-family: monospace; 
+            font-size: 0.75rem; /* Reduced for long lines */
+            color: var(--success); 
+            font-weight: bold; 
+            word-break: break-all; 
+            white-space: pre-wrap; /* Preserve formatting but wrap */
+            max-height: 80px; /* Prevent huge cards */
+            overflow-y: auto; 
+            flex: 1; /* Take remaining space */
+            padding-right: 4px;
+        }
+        .result-text::-webkit-scrollbar { width: 4px; }
+        .result-text::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
         
-        .btn-copy { background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; transition: 0.2s; padding: 0 4px;}
+        .btn-copy { background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; transition: 0.2s; flex-shrink: 0; padding: 4px; }
         .btn-copy:hover { color: var(--success); transform: scale(1.1); }
 
         /* Compact Generator Inputs */
@@ -141,7 +153,6 @@
         .float-controls { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 50; }
         .btn-circle { width: 44px; height: 44px; border-radius: 50%; background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-main); font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .btn-circle:hover { transform: scale(1.1); border-color: var(--accent); }
-
     </style>
 </head>
 <body>
@@ -159,7 +170,6 @@
                 <div class="panel-header"><h3 id="ui_cats">📁 Categories</h3></div>
                 <div class="nav-list" id="catList"></div>
                 
-                <!-- Export/Import Actions (Visible only in Favorites) -->
                 <div class="sidebar-actions" id="favActions">
                     <button class="btn-action" onclick="exportFavs()"><span id="btn_exp">📤 Export</span></button>
                     <button class="btn-action" onclick="document.getElementById('importFile').click()"><span id="btn_imp">📥 Import</span></button>
@@ -172,7 +182,7 @@
         <!-- Main Content -->
         <main>
             <div class="toolbar">
-                <input type="text" class="search-input" id="searchInput" placeholder="Search: //spawn, Alt+B, Giran...">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search: //spawn, Alt+B, SQL...">
             </div>
             <div class="cmd-grid" id="cmdGrid"></div>
         </main>
@@ -186,6 +196,7 @@
                     <div class="sub-tab" onclick="switchDataTab('locs', this)" id="ui_tab_locs">🗺️ Locs</div>
                     <div class="sub-tab" onclick="switchDataTab('classes', this)" id="ui_tab_classes">🛡️ Classes</div>
                 </div>
+                <div class="data-count-info" id="quickDataCount">Total: 0</div>
                 <div class="quick-data-container" id="quickDataList"></div>
             </div>
         </aside>
@@ -202,7 +213,6 @@
     // 1. DATA KNOWLEDGE BASE
     // ==========================================
     
-    // Main Database (Commands, Hotkeys, Info)
     const db = [
         // --- ADMIN: BASE ---
         { id: "gm1", cat: "admin_base", type: "admin", cmd: "//gm", args: [], ru: "Вызов окна GM", en: "Open GM window" },
@@ -246,6 +256,17 @@
         { id: "vc4", cat: "voice", type: "voice", cmd: ".hwid", args: [], ru: "Привязка аккаунта к ПК (HWID)", en: "Lock account to current PC hardware" },
         { id: "vc5", cat: "voice", type: "voice", cmd: ".whoami", args: [], ru: "Показать расширенные статы персонажа", en: "Show advanced character stats" },
         { id: "vc6", cat: "voice", type: "voice", cmd: ".clanlist", args: [], ru: "Удобный список членов клана", en: "Advanced Clan List UI" },
+
+        // --- L2J SQL QUERIES (With warnings!) ---
+        { id: "sql1", cat: "sql", type: "sql", cmd: "UPDATE `droplist` SET `chance`=1000000 WHERE `itemId`=", args: [{n:"Item ID", v:"57"}], ru: "100% Дроп определенного предмета (Например, Адена=57)", en: "100% Drop rate for specific item (e.g. Adena=57)" },
+        { id: "sql2", cat: "sql", type: "sql", cmd: "INSERT INTO `droplist` SELECT id, '4037','4','8','0','800000','1' FROM `npc` WHERE `type` = 'L2RaidBoss';", args: [], ru: "Добавить дроп Coin of Magic всем Рейд Боссам", en: "Add Coin of Magic drop to all Raid Bosses" },
+        { id: "sql3", cat: "sql", type: "sql", cmd: "DELETE FROM items WHERE item_id =", args: [{n:"Item ID", v:"57"}, {n:"AND owner_id =", v:"123456"}], ru: "⚠️ ВНИМАНИЕ! Изменяет БД ⚠️\nУдалить предмет у определенного персонажа", en: "⚠️ DANGER! DB Altering ⚠️\nDelete specific item from specific character" },
+        { id: "sql4", cat: "sql", type: "sql", cmd: "UPDATE etcitem SET price=1 WHERE price > 1; UPDATE weapon SET price=1 WHERE price > 1; UPDATE armor SET price=1 WHERE price > 1;", args: [], ru: "⚠️ ВНИМАНИЕ! Вайп цен ⚠️\nСнижение цен во всех магазинах до 1 адены", en: "⚠️ DANGER! Price wipe ⚠️\nReduce all shop prices to 1 adena" },
+        { id: "sql5", cat: "sql", type: "sql", cmd: "UPDATE etcitem SET price=0 WHERE price > 1; UPDATE weapon SET price=0 WHERE price > 1; UPDATE armor SET price=0 WHERE price > 1;", args: [], ru: "⚠️ ВНИМАНИЕ! Вайп цен ⚠️\nСнижение цен во всех магазинах до 0 аден", en: "⚠️ DANGER! Price wipe ⚠️\nReduce all shop prices to 0 adena" },
+        { id: "sql6", cat: "sql", type: "sql", cmd: "UPDATE etcitem SET weight=1 WHERE weight > 1; UPDATE weapon SET weight=1 WHERE weight > 1; UPDATE armor SET weight=1 WHERE weight > 1;", args: [], ru: "⚠️ ВНИМАНИЕ! Изменяет БД ⚠️\nУбрать вес у всех предметов (сделать 1)", en: "⚠️ DANGER! DB Altering ⚠️\nRemove weight from all items (set to 1)" },
+        { id: "sql7", cat: "sql", type: "sql", cmd: "UPDATE raidboss_spawnlist SET respawn_min_delay = 3600, respawn_max_delay = 3600 WHERE boss_id =", args: [{n:"Boss ID", v:"25325"}], ru: "Изменить респаун определенного РБ (в секундах)", en: "Set specific Raid Boss respawn (in seconds)" },
+        { id: "sql8", cat: "sql", type: "sql", cmd: "UPDATE raidboss_spawnlist SET respawn_min_delay = 3600, respawn_max_delay = 3600 WHERE amount = 1;", args: [], ru: "Установить респаун всех РБ на 1 час (3600 сек)", en: "Set all Raid Bosses respawn to 1 hour (3600s)" },
+        { id: "sql9", cat: "sql", type: "sql", cmd: "INSERT INTO `global_tasks` VALUES (5, 'restart', 'TYPE_SHEDULED', 2147483647, 43200000, 43200000, 360);", args: [], ru: "Авто рестарт сервера каждые 12 часов", en: "Auto restart server every 12 hours" },
 
         // --- PLAYER: CHAT & SOCIAL ---
         { id: "pc1", cat: "player_social", type: "player", cmd: "!", args: [{n:"msg", v:"WTS Vesper"}], ru: "Крик (Шаут, оранжевый чат)", en: "Shout chat (Orange)" },
@@ -296,13 +317,6 @@
         {id: "87386 -143246 -1293", ru: "Шутгарт", en: "Schuttgart"}, {id: "-12672 122776 -3116", ru: "Глудио", en: "Gludio"}
     ];
 
-    const dbSkills = [
-        {id: "1086", ru: "Haste (Скор. Атаки)", en: "Haste"}, {id: "1068", ru: "Might (Физ. Атака)", en: "Might"},
-        {id: "1040", ru: "Shield (Физ. Защита)", en: "Shield"}, {id: "1085", ru: "Acumen (Скор. Магии)", en: "Acumen"},
-        {id: "1059", ru: "Empower (Маг. Атака)", en: "Empower"}, {id: "1204", ru: "Wind Walk (Скор. Бега)", en: "Wind Walk"},
-        {id: "1062", ru: "Beserker Spirit (Берс)", en: "Berserker Spirit"}, {id: "1388", ru: "Greater Might", en: "Greater Might"}
-    ];
-
     const dbItems = [
         {id: "57", ru: "Адена", en: "Adena"}, {id: "4037", ru: "Монета Магии", en: "Coin of Magic"},
         {id: "13797", ru: "Монета Фестиваля", en: "Festival Coin"}, {id: "728", ru: "Зелье Маны (MP)", en: "Mana Potion"},
@@ -312,22 +326,108 @@
         {id: "6801", ru: "Меч ГМа", en: "GM Sword"}, {id: "6840", ru: "Кольцо ГМа", en: "GM Ring"}
     ];
 
+    // HUGE DB SKILLS (All checked, all have `lvl`)
+    const dbSkills = [
+        // Buffs
+        {id:"4342", lvl:"2", ru:"Wind Walk", en:"Wind Walk"}, {id:"1087", lvl:"3", ru:"Agility", en:"Agility"},
+        {id:"4355", lvl:"3", ru:"Acumen", en:"Acumen"}, {id:"1062", lvl:"2", ru:"Berserker Spirit", en:"Berserker Spirit"},
+        {id:"4353", lvl:"6", ru:"Bless Shield", en:"Bless Shield"}, {id:"4347", lvl:"6", ru:"Blessed Body", en:"Blessed Body"},
+        {id:"4348", lvl:"6", ru:"Blessed Soul", en:"Blessed Soul"}, {id:"4351", lvl:"6", ru:"Concentration", en:"Concentration"},
+        {id:"4360", lvl:"3", ru:"Death Whisper", en:"Death Whisper"}, {id:"4356", lvl:"3", ru:"Empower", en:"Empower"},
+        {id:"4359", lvl:"3", ru:"Focus", en:"Focus"}, {id:"4358", lvl:"3", ru:"Guidance", en:"Guidance"},
+        {id:"4357", lvl:"2", ru:"Haste", en:"Haste"}, {id:"4349", lvl:"2", ru:"Magic Barrier", en:"Magic Barrier"},
+        {id:"4346", lvl:"4", ru:"Mental Shield", en:"Mental Shield"}, {id:"4345", lvl:"3", ru:"Might", en:"Might"},
+        {id:"4350", lvl:"4", ru:"Resist Shock", en:"Resist Shock"}, {id:"4344", lvl:"3", ru:"Shield", en:"Shield"},
+        {id:"4354", lvl:"4", ru:"Vampiric Rage", en:"Vampiric Rage"}, {id:"1303", lvl:"1", ru:"Wild Magic", en:"Wild Magic"},
+        {id:"1311", lvl:"6", ru:"Body Of Avatar", en:"Body Of Avatar"},
+        // Dances
+        {id:"307", lvl:"1", ru:"Dance of Aqua Guard", en:"Dance of Aqua Guard"}, {id:"276", lvl:"1", ru:"Dance of Concentration", en:"Dance of Concentration"},
+        {id:"309", lvl:"1", ru:"Dance of Earth Guard", en:"Dance of Earth Guard"}, {id:"274", lvl:"1", ru:"Dance of Fire", en:"Dance of Fire"},
+        {id:"275", lvl:"1", ru:"Dance of Fury", en:"Dance of Fury"}, {id:"272", lvl:"1", ru:"Dance of Inspiration", en:"Dance of Inspiration"},
+        {id:"277", lvl:"1", ru:"Dance of Light", en:"Dance of Light"}, {id:"273", lvl:"1", ru:"Dance of the Mystic", en:"Dance of the Mystic"},
+        {id:"311", lvl:"1", ru:"Dance of Protection", en:"Dance of Protection"}, {id:"365", lvl:"1", ru:"Siren's Dance", en:"Siren's Dance"},
+        {id:"310", lvl:"1", ru:"Dance of the Vampire", en:"Dance of the Vampire"}, {id:"271", lvl:"1", ru:"Dance of the Warrior", en:"Dance of the Warrior"},
+        // Songs
+        {id:"364", lvl:"1", ru:"Song of Champion", en:"Song of Champion"}, {id:"264", lvl:"1", ru:"Song of Earth", en:"Song of Earth"},
+        {id:"306", lvl:"1", ru:"Song of Flame Guard", en:"Song of Flame Guard"}, {id:"269", lvl:"1", ru:"Song of Hunter", en:"Song of Hunter"},
+        {id:"270", lvl:"1", ru:"Song of Invocation", en:"Song of Invocation"}, {id:"265", lvl:"1", ru:"Song of Life", en:"Song of Life"},
+        {id:"363", lvl:"1", ru:"Song of Meditation", en:"Song of Meditation"}, {id:"349", lvl:"1", ru:"Song of Renewal", en:"Song of Renewal"},
+        {id:"308", lvl:"1", ru:"Song of Storm Guard", en:"Song of Storm Guard"}, {id:"305", lvl:"1", ru:"Song of Vengeance", en:"Song of Vengeance"},
+        {id:"304", lvl:"1", ru:"Song of Vitality", en:"Song of Vitality"}, {id:"267", lvl:"1", ru:"Song of Warding", en:"Song of Warding"},
+        {id:"266", lvl:"1", ru:"Song of Water", en:"Song of Water"}, {id:"268", lvl:"1", ru:"Song of Wind", en:"Song of Wind"},
+        // Specials
+        {id:"1388", lvl:"3", ru:"Greater Might", en:"Greater Might"}, {id:"1389", lvl:"3", ru:"Greater Shield", en:"Greater Shield"},
+        {id:"1363", lvl:"1", ru:"Chant of Victory", en:"Chant of Victory"}, {id:"1356", lvl:"1", ru:"Prophecy of Fire", en:"Prophecy of Fire"},
+        {id:"1355", lvl:"1", ru:"Prophecy of Water", en:"Prophecy of Water"}, {id:"1357", lvl:"1", ru:"Prophecy of Wind", en:"Prophecy of Wind"},
+        {id:"1413", lvl:"1", ru:"Chant of Magnus", en:"Chant of Magnus"}, {id:"4702", lvl:"13", ru:"Blessing of Seraphim", en:"Blessing of Seraphim"},
+        {id:"4703", lvl:"13", ru:"Gift of Seraphim", en:"Gift of Seraphim"}, {id:"4700", lvl:"13", ru:"Gift of Queen", en:"Gift of Queen"},
+        {id:"4699", lvl:"13", ru:"Blessing of Queen", en:"Blessing of Queen"}, {id:"1323", lvl:"1", ru:"Noblesse", en:"Noblesse"},
+        // Resists
+        {id:"1393", lvl:"3", ru:"Unholy Resistance", en:"Unholy Resistance"}, {id:"1392", lvl:"3", ru:"Holy Resistance", en:"Holy Resistance"},
+        {id:"1182", lvl:"3", ru:"Resist Aqua", en:"Resist Aqua"}, {id:"1189", lvl:"3", ru:"Resist Wind", en:"Resist Wind"},
+        {id:"1191", lvl:"3", ru:"Resist Fire", en:"Resist Fire"}, {id:"1352", lvl:"1", ru:"Elemental Protection", en:"Elemental Protection"},
+        {id:"1353", lvl:"1", ru:"Divine Protection", en:"Divine Protection"}, {id:"1032", lvl:"3", ru:"Invigor", en:"Invigor"},
+        {id:"1043", lvl:"1", ru:"Holy Weapon", en:"Holy Weapon"}, {id:"1044", lvl:"3", ru:"Regeneration", en:"Regeneration"},
+        {id:"1047", lvl:"4", ru:"Mana Regeneration", en:"Mana Regeneration"}, {id:"1073", lvl:"2", ru:"Kiss of Eva", en:"Kiss of Eva"},
+        {id:"1257", lvl:"3", ru:"Decrease Weight", en:"Decrease Weight"},
+        // Skillbuffs
+        {id:"4", lvl:"2", ru:"Dash", en:"Dash"}, {id:"72", lvl:"3", ru:"Iron Will", en:"Iron Will"},
+        {id:"76", lvl:"1", ru:"Bear Spirit Totem", en:"Bear Spirit Totem"}, {id:"83", lvl:"1", ru:"Wolf Spirit Totem", en:"Wolf Spirit Totem"},
+        {id:"282", lvl:"1", ru:"Puma Spirit Totem", en:"Puma Spirit Totem"}, {id:"292", lvl:"1", ru:"Bison Spirit Totem", en:"Bison Spirit Totem"},
+        {id:"298", lvl:"1", ru:"Rabbit Spirit Totem", en:"Rabbit Spirit Totem"}, {id:"109", lvl:"1", ru:"Ogre Spirit Totem", en:"Ogre Spirit Totem"},
+        {id:"425", lvl:"1", ru:"Hawk Spirit Totem", en:"Hawk Spirit Totem"}, {id:"77", lvl:"2", ru:"Attack Aura", en:"Attack Aura"},
+        {id:"78", lvl:"2", ru:"War Cry", en:"War Cry"}, {id:"86", lvl:"3", ru:"Reflect Damage", en:"Reflect Damage"},
+        {id:"82", lvl:"3", ru:"Majesty", en:"Majesty"}, {id:"99", lvl:"2", ru:"Rapid Shot", en:"Rapid Shot"},
+        {id:"94", lvl:"2", ru:"Rage", en:"Rage"}, {id:"110", lvl:"2", ru:"Ultimate Defense", en:"Ultimate Defense"},
+        {id:"111", lvl:"2", ru:"Ultimate Evasion", en:"Ultimate Evasion"}, {id:"112", lvl:"4", ru:"Deflect Arrow", en:"Deflect Arrow"},
+        {id:"121", lvl:"6", ru:"Battle Roar", en:"Battle Roar"}, {id:"123", lvl:"3", ru:"Spirit Barrier", en:"Spirit Barrier"},
+        {id:"130", lvl:"2", ru:"Thrill Fight", en:"Thrill Fight"}, {id:"131", lvl:"3", ru:"Hawk Eye", en:"Hawk Eye"},
+        {id:"139", lvl:"3", ru:"Guts", en:"Guts"}, {id:"176", lvl:"3", ru:"Frenzy", en:"Frenzy"},
+        {id:"230", lvl:"2", ru:"Sprint", en:"Sprint"}, {id:"287", lvl:"3", ru:"Lionheart", en:"Lionheart"},
+        {id:"297", lvl:"2", ru:"Duelist Spirit", en:"Duelist Spirit"}, {id:"303", lvl:"4", ru:"Soul of Sagittarius", en:"Soul of Sagittarius"},
+        {id:"406", lvl:"3", ru:"Angelic Icon", en:"Angelic Icon"}, {id:"409", lvl:"10", ru:"Critical Blow", en:"Critical Blow"},
+        {id:"410", lvl:"3", ru:"Mortal Strike", en:"Mortal Strike"}, {id:"411", lvl:"3", ru:"Stealth", en:"Stealth"},
+        {id:"413", lvl:"8", ru:"Rapid Fire", en:"Rapid Fire"}, {id:"414", lvl:"8", ru:"Dead Eye", en:"Dead Eye"},
+        {id:"420", lvl:"3", ru:"Zealot", en:"Zealot"}, {id:"1232", lvl:"3", ru:"Blazing Skin", en:"Blazing Skin"},
+        {id:"1238", lvl:"3", ru:"Freezing Skin", en:"Freezing Skin"},
+        // Warcryer/Overlord
+        {id:"1229", lvl:"18", ru:"Chant of Life", en:"Chant of Life"}, {id:"1251", lvl:"2", ru:"Chant of Fury", en:"Chant of Fury"},
+        {id:"1362", lvl:"1", ru:"Chant of Spirit", en:"Chant of Spirit"}, {id:"1310", lvl:"4", ru:"Chant of Vampire", en:"Chant of Vampire"},
+        {id:"1391", lvl:"3", ru:"Earth Chant", en:"Earth Chant"}, {id:"1390", lvl:"3", ru:"War Chant", en:"War Chant"},
+        {id:"1364", lvl:"1", ru:"Eye of Pa'agrio", en:"Eye of Pa'agrio"}, {id:"1354", lvl:"1", ru:"Soul of Pa'agrio", en:"Soul of Pa'agrio"},
+        {id:"1414", lvl:"1", ru:"Victories of Pa'agrio", en:"Victories of Pa'agrio"}, {id:"1005", lvl:"3", ru:"Blessings of Pa'agrio", en:"Blessings of Pa'agrio"}
+    ];
+
     const dbClasses = [
-        {id:"0", ru:"Fighter", en:"Fighter"}, {id:"10", ru:"Mage", en:"Mage"}, {id:"88", ru:"Duelist", en:"Duelist"},
-        {id:"89", ru:"Dreadnought", en:"Dreadnought"}, {id:"90", ru:"Phoenix Knight", en:"Phoenix Knight"}, 
-        {id:"91", ru:"Hell Knight", en:"Hell Knight"}, {id:"92", ru:"Sagittarius", en:"Sagittarius"},
-        {id:"93", ru:"Adventurer", en:"Adventurer"}, {id:"94", ru:"Archmage", en:"Archmage"}, 
-        {id:"95", ru:"Soultaker", en:"Soultaker"}, {id:"96", ru:"Arcana Lord", en:"Arcana Lord"}, 
-        {id:"97", ru:"Cardinal", en:"Cardinal"}, {id:"98", ru:"Hierophant", en:"Hierophant"},
-        {id:"99", ru:"Eva's Templar", en:"Eva's Templar"}, {id:"100", ru:"Sword Muse", en:"Sword Muse"}, 
-        {id:"101", ru:"Wind Rider", en:"Wind Rider"}, {id:"102", ru:"Moonlight Sentinel", en:"Moonlight Sentinel"}, 
-        {id:"103", ru:"Mystic Muse", en:"Mystic Muse"}, {id:"104", ru:"Elemental Master", en:"Elemental Master"},
-        {id:"105", ru:"Eva's Saint", en:"Eva's Saint"}, {id:"106", ru:"Shillien Templar", en:"Shillien Templar"}, 
-        {id:"107", ru:"Spectral Dancer", en:"Spectral Dancer"}, {id:"108", ru:"Ghost Hunter", en:"Ghost Hunter"}, 
-        {id:"109", ru:"Ghost Sentinel", en:"Ghost Sentinel"}, {id:"110", ru:"Storm Screamer", en:"Storm Screamer"},
-        {id:"111", ru:"Spectral Master", en:"Spectral Master"}, {id:"112", ru:"Shillien Saint", en:"Shillien Saint"}, 
-        {id:"113", ru:"Titan", en:"Titan"}, {id:"114", ru:"Grand Khavatari", en:"Grand Khavatari"}, 
-        {id:"115", ru:"Dominator", en:"Dominator"}, {id:"116", ru:"Doomcryer", en:"Doomcryer"},
+        {id:"0", ru:"Fighter", en:"Fighter"}, {id:"1", ru:"Warrior", en:"Warrior"}, {id:"2", ru:"Gladiator", en:"Gladiator"},
+        {id:"3", ru:"Warlord", en:"Warlord"}, {id:"4", ru:"Knight", en:"Knight"}, {id:"5", ru:"Paladin", en:"Paladin"},
+        {id:"6", ru:"Dark Avenger", en:"Dark Avenger"}, {id:"7", ru:"Rogue", en:"Rogue"}, {id:"8", ru:"Treasure Hunter", en:"Treasure Hunter"},
+        {id:"9", ru:"Hawkeye", en:"Hawkeye"}, {id:"10", ru:"Mage", en:"Mage"}, {id:"11", ru:"Wizard", en:"Wizard"},
+        {id:"12", ru:"Sorcerer", en:"Sorcerer"}, {id:"13", ru:"Necromancer", en:"Necromancer"}, {id:"14", ru:"Warlock", en:"Warlock"},
+        {id:"15", ru:"Cleric", en:"Cleric"}, {id:"16", ru:"Bishop", en:"Bishop"}, {id:"17", ru:"Prophet", en:"Prophet"},
+        {id:"18", ru:"Elven Fighter", en:"Elven Fighter"}, {id:"19", ru:"Elven Knight", en:"Elven Knight"}, {id:"20", ru:"Temple Knight", en:"Temple Knight"},
+        {id:"21", ru:"Swordsinger", en:"Swordsinger"}, {id:"22", ru:"Elven Scout", en:"Elven Scout"}, {id:"23", ru:"Plains Walker", en:"Plains Walker"},
+        {id:"24", ru:"Silver Ranger", en:"Silver Ranger"}, {id:"25", ru:"Elven Mage", en:"Elven Mage"}, {id:"26", ru:"Elven Wizard", en:"Elven Wizard"},
+        {id:"27", ru:"Spellsinger", en:"Spellsinger"}, {id:"28", ru:"Elemental Summoner", en:"Elemental Summoner"}, {id:"29", ru:"Oracle", en:"Oracle"},
+        {id:"30", ru:"Elder", en:"Elder"}, {id:"31", ru:"Dark Fighter", en:"Dark Fighter"}, {id:"32", ru:"Palus Knight", en:"Palus Knight"},
+        {id:"33", ru:"Shillien Knight", en:"Shillien Knight"}, {id:"34", ru:"Bladedancer", en:"Bladedancer"}, {id:"35", ru:"Assassin", en:"Assassin"},
+        {id:"36", ru:"Abyss Walker", en:"Abyss Walker"}, {id:"37", ru:"Phantom Ranger", en:"Phantom Ranger"}, {id:"38", ru:"Dark Mage", en:"Dark Mage"},
+        {id:"39", ru:"Dark Wizard", en:"Dark Wizard"}, {id:"40", ru:"Spellhowler", en:"Spellhowler"}, {id:"41", ru:"Phantom Summoner", en:"Phantom Summoner"},
+        {id:"42", ru:"Shillien Oracle", en:"Shillien Oracle"}, {id:"43", ru:"Shillien Elder", en:"Shillien Elder"}, {id:"44", ru:"Orc Fighter", en:"Orc Fighter"},
+        {id:"45", ru:"Orc Raider", en:"Orc Raider"}, {id:"46", ru:"Destroyer", en:"Destroyer"}, {id:"47", ru:"Orc Monk", en:"Orc Monk"},
+        {id:"48", ru:"Tyrant", en:"Tyrant"}, {id:"49", ru:"Orc Mage", en:"Orc Mage"}, {id:"50", ru:"Orc Shaman", en:"Orc Shaman"},
+        {id:"51", ru:"Overlord", en:"Overlord"}, {id:"52", ru:"Warcryer", en:"Warcryer"}, {id:"53", ru:"Dwarven Fighter", en:"Dwarven Fighter"},
+        {id:"54", ru:"Scavenger", en:"Scavenger"}, {id:"55", ru:"Bounty Hunter", en:"Bounty Hunter"}, {id:"56", ru:"Artisan", en:"Artisan"},
+        {id:"57", ru:"Warsmith", en:"Warsmith"}, {id:"88", ru:"Duelist", en:"Duelist"}, {id:"89", ru:"Dreadnought", en:"Dreadnought"},
+        {id:"90", ru:"Phoenix Knight", en:"Phoenix Knight"}, {id:"91", ru:"Hell Knight", en:"Hell Knight"}, {id:"92", ru:"Sagittarius", en:"Sagittarius"},
+        {id:"93", ru:"Adventurer", en:"Adventurer"}, {id:"94", ru:"Archmage", en:"Archmage"}, {id:"95", ru:"Soultaker", en:"Soultaker"},
+        {id:"96", ru:"Arcana Lord", en:"Arcana Lord"}, {id:"97", ru:"Cardinal", en:"Cardinal"}, {id:"98", ru:"Hierophant", en:"Hierophant"},
+        {id:"99", ru:"Eva's Templar", en:"Eva's Templar"}, {id:"100", ru:"Sword Muse", en:"Sword Muse"}, {id:"101", ru:"Wind Rider", en:"Wind Rider"},
+        {id:"102", ru:"Moonlight Sentinel", en:"Moonlight Sentinel"}, {id:"103", ru:"Mystic Muse", en:"Mystic Muse"}, {id:"104", ru:"Elemental Master", en:"Elemental Master"},
+        {id:"105", ru:"Eva's Saint", en:"Eva's Saint"}, {id:"106", ru:"Shillien Templar", en:"Shillien Templar"}, {id:"107", ru:"Spectral Dancer", en:"Spectral Dancer"},
+        {id:"108", ru:"Ghost Hunter", en:"Ghost Hunter"}, {id:"109", ru:"Ghost Sentinel", en:"Ghost Sentinel"}, {id:"110", ru:"Storm Screamer", en:"Storm Screamer"},
+        {id:"111", ru:"Spectral Master", en:"Spectral Master"}, {id:"112", ru:"Shillien Saint", en:"Shillien Saint"}, {id:"113", ru:"Titan", en:"Titan"},
+        {id:"114", ru:"Grand Khavatari", en:"Grand Khavatari"}, {id:"115", ru:"Dominator", en:"Dominator"}, {id:"116", ru:"Doomcryer", en:"Doomcryer"},
         {id:"117", ru:"Fortune Seeker", en:"Fortune Seeker"}, {id:"118", ru:"Maestro", en:"Maestro"}
     ];
 
@@ -345,23 +445,27 @@
     const i18n = {
         en: {
             title: "📚 L2 Ultimate Database", subtitle: "Smart Cheat Sheet: GM Commands, Hotkeys, Coordinates & IDs",
-            cats: "📁 Categories", search: "Search: //spawn, Alt+B, Giran...",
+            cats: "📁 Categories", search: "Search: //spawn, Alt+B, SQL...",
             cat_fav: "⭐ Favorites", cat_all: "📌 All Commands", cat_admin_base: "🔴 Admin: Base", cat_admin_spawn: "🔴 Admin: Spawn/Items",
             cat_admin_player: "🔴 Admin: Players", cat_admin_clan: "🔴 Admin: Clan/Server", cat_voice: "🟣 Voice Configs (.cfg)",
-            cat_player_social: "🟢 Player: Social", cat_player_actions: "🟢 Player: Actions", cat_hotkeys: "⌨️ Hotkeys", cat_info: "📚 Cheat Sheets",
-            btn_exp: "📤 Export", btn_imp: "📥 Import", btn_clr: "🗑 Clear All",
+            cat_sql: "💽 SQL Queries", cat_player_social: "🟢 Player: Social", cat_player_actions: "🟢 Player: Actions", 
+            cat_hotkeys: "⌨️ Hotkeys", cat_info: "📚 Cheat Sheets",
+            btn_exp: "📤 Export", btn_imp: "📥 Import", btn_clr: "🗑 Clear",
             conf_clr: "Are you sure you want to clear all favorites?",
-            no_favs: "No favorites to export", imp_ok: "Favorites imported successfully!", imp_err: "Invalid file format."
+            no_favs: "No favorites to export", imp_ok: "Favorites imported successfully!", imp_err: "Invalid file format.",
+            total: "Total:"
         },
         ru: {
             title: "📚 L2 Ultimate Database", subtitle: "Умная база знаний: ГМ Команды, Горячие клавиши, Координаты и ID",
-            cats: "📁 Категории", search: "Поиск: //spawn, Alt+B, Гиран...",
+            cats: "📁 Категории", search: "Поиск: //spawn, Alt+B, SQL...",
             cat_fav: "⭐ Избранное", cat_all: "📌 Все команды", cat_admin_base: "🔴 Админ: Базовые", cat_admin_spawn: "🔴 Админ: Спавн/Вещи",
             cat_admin_player: "🔴 Админ: Игроки", cat_admin_clan: "🔴 Админ: Кланы/Сервер", cat_voice: "🟣 Голосовые (.cfg)",
-            cat_player_social: "🟢 Игрок: Чат и Социум", cat_player_actions: "🟢 Игрок: Макросы", cat_hotkeys: "⌨️ Горячие клавиши", cat_info: "📚 Справка (Шпоры)",
+            cat_sql: "💽 SQL Запросы", cat_player_social: "🟢 Игрок: Чат и Социум", cat_player_actions: "🟢 Игрок: Макросы", 
+            cat_hotkeys: "⌨️ Горячие клавиши", cat_info: "📚 Справка (Шпоры)",
             btn_exp: "📤 Экспорт", btn_imp: "📥 Импорт", btn_clr: "🗑 Очистить",
             conf_clr: "Вы уверены, что хотите удалить все закладки?",
-            no_favs: "Нет закладок для экспорта", imp_ok: "Избранное успешно загружено!", imp_err: "Неверный формат файла."
+            no_favs: "Нет закладок для экспорта", imp_ok: "Избранное успешно загружено!", imp_err: "Неверный формат файла.",
+            total: "Всего:"
         }
     };
 
@@ -392,7 +496,6 @@
         applyLocales();
     }
 
-    // Secure copy fallback
     function copyToClipboard(text, btn) {
         const onSuccess = () => {
             const oldIcon = btn.innerText;
@@ -414,7 +517,6 @@
         }
     }
 
-    // Favorites Logic
     function toggleFav(id) {
         if (favorites.includes(id)) { favorites = favorites.filter(fav => fav !== id); } 
         else { favorites.push(id); }
@@ -448,7 +550,7 @@
             } catch(err) { alert(i18n[lang].imp_err); }
         };
         reader.readAsText(file);
-        e.target.value = ''; // reset
+        e.target.value = '';
     }
 
     function clearFavs() {
@@ -466,7 +568,7 @@
     function buildCommandStr(base, card) {
         let str = base;
         card.querySelectorAll('input').forEach(inp => {
-            const val = inp.value.replace(/[<>]/g, ''); // basic sanitize
+            const val = inp.value.replace(/[<>]/g, ''); 
             str += ` ${val}`;
         });
         return str;
@@ -484,11 +586,16 @@
         const map = { 'items': dbItems, 'classes': dbClasses, 'locs': dbLocs, 'skills': dbSkills };
         const data = map[activeDataTab];
         
+        document.getElementById('quickDataCount').innerText = `${i18n[lang].total} ${data.length}`;
+        
         let html = '';
         data.forEach(item => {
+            const copyText = item.lvl ? `${item.id} ${item.lvl}` : item.id;
+            const lvlBadge = item.lvl ? `<b style="color:var(--text-muted); margin-left:4px;">(Lvl ${item.lvl})</b>` : '';
+            
             html += `
-                <div class="data-item" onclick="copyToClipboard('${item.id}', this.querySelector('.id-badge'))" title="Click to copy">
-                    <span>${item[lang]}</span>
+                <div class="data-item" onclick="copyToClipboard('${copyText}', this.querySelector('.id-badge'))" title="Click to copy">
+                    <span>${item[lang]}${lvlBadge}</span>
                     <span class="id-badge">${item.id}</span>
                 </div>
             `;
@@ -509,7 +616,7 @@
     }
 
     function renderCategories() {
-        const cats = ["fav", "all", "admin_base", "admin_spawn", "admin_player", "admin_clan", "voice", "player_social", "player_actions", "hotkeys", "info"];
+        const cats = ["fav", "all", "admin_base", "admin_spawn", "admin_player", "admin_clan", "voice", "sql", "player_social", "player_actions", "hotkeys", "info"];
         const t = i18n[lang];
         let html = '';
         cats.forEach(c => {
@@ -551,7 +658,7 @@
         });
 
         if(filtered.length === 0) {
-            grid.innerHTML = ''; // Let the :empty pseudo-class handle the placeholder
+            grid.innerHTML = ''; 
             return;
         }
 
@@ -626,20 +733,18 @@
         if (theme === 'light') document.body.className = 'light-theme';
         applyLocales();
         
-        // Debounced Search
         document.getElementById('searchInput').addEventListener('input', (e) => {
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
                 searchQuery = e.target.value;
                 if(searchQuery && activeCategory !== 'all' && activeCategory !== 'fav') {
-                    activeCategory = 'all'; // Auto-switch to "All" when searching from a specific tab
+                    activeCategory = 'all'; 
                 }
                 renderCategories();
                 renderCommands();
             }, 300);
         });
 
-        // Event Delegation for Generator Inputs
         document.getElementById('cmdGrid').addEventListener('input', (e) => {
             if (e.target.tagName === 'INPUT') {
                 const card = e.target.closest('.cmd-card');
