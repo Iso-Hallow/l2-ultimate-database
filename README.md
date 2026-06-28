@@ -9,7 +9,7 @@
 ## 🖥️ Демо
 
 **Живая демонстрация:** [https://iso-hallow.github.io/l2-ultimate-database](https://iso-hallow.github.io/l2-ultimate-database/)
-https://iso-hallow.github.io/l2-ultimate-database/
+
 ## 📌 О проекте
 
 **L2 Ultimate Database** — это веб-приложение-шпаргалка для администраторов и игроков серверов Lineage 2. Инструмент помогает быстро находить GM команды, горячие клавиши, ID предметов и координаты.
