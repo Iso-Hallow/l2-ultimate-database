@@ -5,6 +5,8 @@
 [![Status](https://img.shields.io/badge/status-beta-yellow)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 [![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen)]()
+[![Version](https://img.shields.io/badge/version-v5.0_BETA-yellow)]()
+
 
 ## 🖥️ Демо
 
